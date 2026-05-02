@@ -1,5 +1,7 @@
 local peds = {}
 
+local InEffect = false
+
 --########################### LOAD MODEL ###########################
 function LoadModel(model)
     local modelHash = GetHashKey(model)
@@ -27,18 +29,17 @@ end
 --########################### JOINT ###########################
 local joints = 0
 
-Citizen.CreateThread(function()         
-    while true do
-		if joints > 0 then
-			Wait(Config.JointTimeLimit)
-			joints = 0
-		end
-		Citizen.Wait(1000)
-	end
-end)
-
 RegisterNetEvent('xakra_drugs:JointAnim')
 AddEventHandler('xakra_drugs:JointAnim', function()
+	if InEffect then return end
+
+	TriggerServerEvent('xakra_drugs:SubItem', Config.Joint, 1)
+	TriggerEvent("vorpmetabolism:changeValue", "Hunger", -200)
+
+	InEffect = true
+
+	joints = joints + 1
+
 	local cigarette = CreateObject(GetHashKey('p_cigarette_dynamic_01x'), GetEntityCoords(PlayerPedId()), true, true, true)
     local righthand = GetEntityBoneIndexByName(PlayerPedId(), "SKEL_R_Finger13")
     local mouth = GetEntityBoneIndexByName(PlayerPedId(), "skel_head")
@@ -90,11 +91,22 @@ AddEventHandler('xakra_drugs:JointAnim', function()
 		AnimpostfxPlay('PlayerWakeUpDrunk')
 		AnimpostfxStop('playerdrugshalluc01')
 	end
+
+	InEffect = false
+
+	Wait(Config.JointTimeLimit)
+	joints = joints - 1
 end)
 
 --########################### OPIUM ###########################
 RegisterNetEvent('xakra_drugs:Opium')
 AddEventHandler('xakra_drugs:Opium', function()
+	if InEffect then return end
+
+	TriggerServerEvent('xakra_drugs:SubItem', Config.Opium, 1)
+
+	InEffect = true
+
 	local pipe = CreateObject(GetHashKey('P_PIPE01X'), GetEntityCoords(PlayerPedId()), true, true, true)
     local righthand = GetEntityBoneIndexByName(PlayerPedId(), "SKEL_R_Finger13")
     AttachEntityToEntity(pipe, PlayerPedId(), righthand, 0.005, -0.045, 0.0, -170.0, 10.0, -15.0, true, true, false, true, 1, true)
@@ -126,6 +138,8 @@ AddEventHandler('xakra_drugs:Opium', function()
 	AnimpostfxPlay('PlayerWakeUpDrunk')
 	AnimpostfxStop('playerdrugshalluc01')
 	Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), false, 0.0) -- SetPedDrunkness
+
+	InEffect = false
 end)
 
 function CreateOpiumPed(model)
@@ -200,6 +214,12 @@ local SkyEffects = {
 
 RegisterNetEvent('xakra_drugs:Mushroom')
 AddEventHandler('xakra_drugs:Mushroom', function()
+	if InEffect then return end
+
+	TriggerServerEvent('xakra_drugs:SubItem', Config.Mushroom, 1)
+
+	InEffect = true
+
 	mushroom = CreateObject(GetHashKey('s_amedmush'), GetEntityCoords(PlayerPedId()), true, true, true)
     local righthand = GetEntityBoneIndexByName(PlayerPedId(), "SKEL_R_Finger13")
     AttachEntityToEntity(mushroom, PlayerPedId(), righthand, 0.005, -0.045, 0.0, -170.0, 10.0, -15.0, true, true, false, true, 1, true)
@@ -260,6 +280,8 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	AnimpostfxPlay('PlayerWakeUpInterrogation')
 	Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), false, 0.0)	-- SetPedDrunkness
 	AnimpostfxStop('PlayerRPGCore')
+
+	InEffect = false
 end)
 
 function CreateMushroomPed(model, coords)
